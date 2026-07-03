@@ -56,6 +56,13 @@ The model is a **service**, not a script buried in a UI. The frontend holds no M
 code — it only collects inputs and renders whatever the API returns. The same
 endpoint could serve a mobile app or a hospital system unchanged.
 
+Interactive API docs (`/docs`) and a live response — prediction, probability, and
+SHAP contributions all returned as JSON:
+
+![FastAPI /predict request](api_docs_request.png)
+
+![API response with prediction, probability, and SHAP](api_response.png)
+
 ## Tech stack
 
 Python, scikit-learn, XGBoost, imbalanced-learn, Optuna, MLflow, SHAP, FastAPI,
@@ -122,11 +129,21 @@ per-patient waterfall showing exactly why one person was scored the way they
 were (e.g. "Glucose +0.28 raises risk, BMI −0.08 lowers it"). The API returns
 these contributions on every prediction, so no result is a black box.
 
+Global feature importance across all patients:
+
+![SHAP summary plot](shap_summary.png)
+
+Per-patient explanation (one individual's prediction broken down):
+
+![SHAP waterfall for one patient](shap_patient0.png)
+
 ## Experiment tracking
 
 `tune.py` logs every Optuna trial to MLflow — parameters, the cross-validated
 AUC, and a model tag — into a browsable dashboard (`mlflow ui`), giving a
 reproducible record of the whole search rather than numbers that scroll away.
+
+![MLflow runs dashboard](mlflow_runs.png)
 
 ## Drift monitoring
 
@@ -134,6 +151,11 @@ reproducible record of the whole search rather than numbers that scroll away.
 simulated incoming batch and generates an Evidently HTML report flagging which
 features have drifted. In production this would run on each incoming batch and
 trigger retraining when drift crosses a threshold.
+
+In this run, 2 of 8 features (Glucose and Age — the ones deliberately shifted)
+are flagged as drifted via a Kolmogorov–Smirnov test:
+
+![Evidently drift report](drift_summary.png)
 
 ## Limitations
 
