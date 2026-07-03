@@ -62,4 +62,48 @@ def evaluate_on_holdout(name, estimator, X_train, X_test, y_train, y_test):
     tn, fp, fn, tp = confusion_matrix(y_test, preds).ravel()
     print("Confusion matrix:")
     print(f"  True Negatives : {tn:3d}    False Positives: {fp:3d}")
-    print(f"  False Negatives: {fn:3d}    True Positives : {tp:3d}
+    print(f"  False Negatives: {fn:3d}    True Positives : {tp:3d}")
+    print(f"ROC-AUC: {roc_auc_score(y_test, proba):.3f}")
+    return estimator
+
+
+def main():
+    X, y = load_data()
+    print("Class balance (0 = healthy, 1 = diabetic):")
+    print(y.value_counts())
+
+    # 1) Cross-validation: the trustworthy, averaged estimate.
+    cross_validate("LogisticRegression", LogisticRegression(max_iter=1000), X, y)
+    cross_validate(
+        "RandomForest",
+        RandomForestClassifier(n_estimators=100, random_state=RANDOM_STATE),
+        X, y,
+    )
+
+    # 2) Single held-out split: detailed per-class report + confusion matrix.
+    # stratify=y keeps the 65/35 class ratio in both train and test.
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=RANDOM_STATE, stratify=y
+    )
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+
+    logreg = evaluate_on_holdout(
+        "LogisticRegression", LogisticRegression(max_iter=1000),
+        X_train_scaled, X_test_scaled, y_train, y_test,
+    )
+    evaluate_on_holdout(
+        "RandomForest",
+        RandomForestClassifier(n_estimators=100, random_state=RANDOM_STATE),
+        X_train_scaled, X_test_scaled, y_train, y_test,
+    )
+
+    # Save the deployed model + scaler (separate files, so app.py is unchanged).
+    joblib.dump(logreg, "model.pkl")
+    joblib.dump(scaler, "scaler.pkl")
+    print("\nSaved model.pkl and scaler.pkl")
+
+
+if __name__ == "__main__":
+    main()
