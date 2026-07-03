@@ -20,6 +20,8 @@ from xgboost import XGBClassifier
 from train import load_data, RANDOM_STATE
 
 CV = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
+# Modern MLflow needs a database backend; log to a local SQLite file.
+mlflow.set_tracking_uri("sqlite:///mlflow.db")
 mlflow.set_experiment("diabetes-tuning")  # groups all runs under one project
 
 
